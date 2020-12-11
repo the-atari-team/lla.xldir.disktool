@@ -1,0 +1,11 @@
+.idea
+*.iml
+.project
+.classpath
+.settings
+target
+disktool/LINEEND.TXT
+bin/xldir.jar
+bin/*
+disktool/*.atr
+disktool/*.atr.hexdump

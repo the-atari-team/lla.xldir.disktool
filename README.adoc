@@ -1,0 +1,155 @@
+= Atari 8bit disc image tool
+
+Small Java tool, to read Atari 8bit discs images like ATR (contains 16 bytes header), XFD (no header) or LiteDOS images in batch mode.
+
+Why an other new ATR tool, because I would like to program one by myself. Just for knowledge.
+
+== Licenses
+Some stuff here is downloaded from AtariWiki and is licensed under
+https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+* Turbo-DOS XE 2.0 (see https://atariwiki.org/wiki/ for more information)
+* Turbo-Basic-XL 2.0 (https://atariwiki.org/wiki/ for more information)
+* LiteDOS-3
+
+The Atari 8bit disc image tool sources are also licensed under Creative Common License.
+
+
+=== This tool has:
+
+* [x] read, write sd format support
+* [x] read, write dd format support
+* [x] read, write ed format support (2. vtoc on sector 1024)
+* [x] LiteDOS read(Dos 2.5) and write in main directory, but no subdirectory support.
+* [x] read,write with character conversion support in TXT-files
+* [x] read,write also with line number support on LST-files see below
+* [x] batchable, the most important for me
+
+== Some TODOs
+* [ ] lot of german comments, sorry
+* [ ] use Atari error numbers!
+* [ ] Better check invalid directory entries
+* [ ] insert single file without the insert file
+* [x] overread REM in LST files
+* [ ] at least Umlauts should be interpreted correctly
+* [ ] LiteDOS format, small cluster with less entries in directory
+* [ ] Umlaut Support
+* [ ] UTF-8 Support
+
+== Parameter
+Usage::
+[source]
+  java -jar xldir.jar <Atari disc image> <command> <file> ...
+  or as quick starter
+  xldir <Atari disc image> <command> <file> ...
+
+When no <command> is given, the fallback takes over : command := list
+
+=== commands
+list:: shows directory or given Atari disc image
+list all:: shows directory and also deleted files, therefore we check if file is completely readable.
+The sectors are tracked internally. If this is ok, the file can be extracted, otherwise the file is marked as defective.
+
+extract file:: extracts a file, lower case letters can also be used, but the result is what the Atari disc contains.
+
+
+==== extract rules for TXT files
+ - is it a TXT file, line ending to Unix is applied
+ - is it a LST file, line numbers will be removed and line ending to Unix applied
+
+extract all:: extract all files
+ - all rules will be used
+
+insert file::
+To write files on to a Atari disc image, you must create an "insert-file".
+Due to the fact there exists a lot of restrictions in Atari file system,
+max 8 characters for name, 3 characters for extension, only upper case,
+we need an insert-file which contains the translation for the name.
+This file will read and interpreted. xldir copies all files given in the insert-file to Atari disc image.
+
+- In addition, you can specify in the insert file what should happen to the files:
+Possible format in insert file: always in one line:
+
+Comments start with '#'
+
+file.ext::
+Copies the file 'file.ext' into the Atari disc image.
+The rules for special endings apply.
+
+Long file name.extension \-> SHORT.EXT::
+Copies the file with the 'long file name.extension' as SHORT.EXT into the Atari disc image.
+The rules for special endings apply.
+
+file name \-> plain \-> SHORT.EXT::
+Copies the file 'file name' plain as SHORT.EXT into the Atari disc image and no rules will apply.
+
+file name \-> list \-> SHORT.EXT::
+Copies the file 'file name' as SHORT.EXT into the Atari disc image and
+apply the rules for LST files.
+
+-
+
+makesd::
+makeed::
+makedd:: creates new right sized empty discs, must be formatted and initialised by an Atari-DOS with the emulator. Will also not write the default 3x128 bootsectors.
+
+hexdump:: create a hexdump of the given atari disc and store it under the given new name.
+
+fsck:: performs a disc check,
+- all files will check on disc by follow there next position header (last 3 bytes) errors will identify.
+A repair does not be done.
+
+==== insert rules for TXT-files
+- is it a TXT-file, unix/windows line ending will convert to Atari 0x9b return.
+
+
+==== insert Regeln für LST Dateien
+Ist EXT == LST::
+- is it a LST file,
+- unix/windows line ending will convert to Atari 0x9b return
+- line numbers will be added
+- empty lines will overread
+- lines start with REM will leave out
+- lines containing :REM ... will remove everything from :REM to lineend
+- starts a line with '!', everything will written to file without
+line number and without the first '!'.
+So '!run' at the end will execute the program after file is entered.
+
+=== examples
+[source]
+--
+java -jar xldir.jar disc.atr list
+java -jar xldir.jar disc.atr list all
+java -jar xldir.jar disc.atr extract turbobas.com
+java -jar xldir.jar disc.atr extract all
+or
+xldir disc.atr
+xldir disc.atr list
+xldir disc.atr list all
+[...]
+--
+
+== Installation
+After successful build, copy the disktool/target/xldir.jar to
+a directory, where a path in your $PATH variable shows to. Then
+create the following simple script like
+[source]
+#!/bin/bash
+SCRIPT=$(dirname $0)
+java -jar ${SCRIPT}/xldir.jar $@
+
+Rename this script to `xldir` and give
+it execute flags like
+`chmod +x xldir`. Now on console, call `xldir`
+and you will get the usage information of this disc tool.
+
+Here also a script exists. `./deploy.sh` but due to the fact that
+every user has a different environment, you shuld not use it.
+It is just for me to install this compiler on my Windows (mingw) PC
+and on my Linux PC. Maybe you find it useful.
+
+
+== Sorry
+In the source you will find lot of german comments, sorry for that.
+
+You need this tool named `xldir` to build Oxygene Be from source.
